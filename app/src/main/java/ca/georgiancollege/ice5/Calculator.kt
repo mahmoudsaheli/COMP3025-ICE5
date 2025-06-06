@@ -133,7 +133,7 @@ class Calculator(private val binding: ActivityMainBinding) {
 
             if (operator == "+") {
                 result = num1 + num2
-            } else if (operator == "-") {
+            } else if (operator == "\uf068") {
                 result = num1 - num2
             } else if (operator == "\uf00d" ) {
                 result = num1 * num2
