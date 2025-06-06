@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity()
             insets
         }
 
-        val calculator = Calculator(binding=binding)
+         Calculator(binding=binding)
 
         val person = Person("Tom", 100f)
         Log.i("onCreate", person.toString())
