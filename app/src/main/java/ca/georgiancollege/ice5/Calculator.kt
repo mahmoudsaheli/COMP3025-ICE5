@@ -6,32 +6,22 @@ import ca.georgiancollege.ice5.databinding.ActivityMainBinding
 
 class Calculator(private val binding: ActivityMainBinding) {
 
-
     private lateinit var numberButtons: List<Button>
     private lateinit var operatorButtons: List<Button>
     private lateinit var modifierButtons: List<Button>
+
     private var currentOperand: String = ""
     private var currentOperator: String = ""
     private var calculationDone: Boolean = false
 
     init {
-
-        initializeButtonLists(binding=binding)
-
+        initializeButtonLists(binding = binding)
         configureNumberInput()
         configureModifierButtons()
-
+        configureOperatorButtons()
     }
 
-    /**
-     * Initializes the lists of buttons for numbers, operators, and modifiers.
-     * This allows for easy access to all buttons in the calculator layout.
-     *
-     * @param binding [ActivityMainBinding] The binding object for the main activity layout.
-     */
-    private fun initializeButtonLists(binding: ActivityMainBinding)
-    {
-        // Initialize number buttons
+    private fun initializeButtonLists(binding: ActivityMainBinding) {
         numberButtons = listOf(
             binding.zeroButton, binding.oneButton, binding.twoButton,
             binding.threeButton, binding.fourButton, binding.fiveButton,
@@ -39,7 +29,6 @@ class Calculator(private val binding: ActivityMainBinding) {
             binding.nineButton, binding.decimalButton
         )
 
-        // Initialize operator buttons
         operatorButtons = listOf(
             binding.plusButton, binding.minusButton,
             binding.multiplyButton, binding.divideButton, binding.percentButton
@@ -51,81 +40,54 @@ class Calculator(private val binding: ActivityMainBinding) {
         )
     }
 
-    /**
-     * Configures the number input buttons to handle clicks and update the result EditText.
-     * It prevents multiple decimal points in the current number and handles leading zeros.
-     */
-    private fun configureNumberInput()
-    {
+    private fun configureNumberInput() {
         numberButtons.forEach { button ->
             button.setOnClickListener {
                 val input = button.text.toString()
                 val currentResultText = binding.resultEditText.text.toString()
 
-                // Prevent multiple decimal points in the current number
-                if (input == "." && currentResultText.contains("."))
-                {
-                    return@setOnClickListener // Do nothing if a decimal already exists
-                }
+                if (input == "." && currentResultText.contains(".")) return@setOnClickListener
 
-                // If the current result is "0" and input is not ".", replace it
-                if (currentResultText == "0" && input != ".")
-                {
+                if (currentResultText == "0" && input != ".") {
                     binding.resultEditText.setText(input)
-                }
-                else
-                {
-                    binding.resultEditText.append(input)
+                } else {
+                    if (calculationDone) {
+                        binding.resultEditText.setText(input)
+                        calculationDone = false
+                    } else {
+                        binding.resultEditText.append(input)
+                    }
                 }
             }
         }
     }
 
-    private fun configureModifierButtons()
-    {
+    private fun configureModifierButtons() {
         modifierButtons.forEach { button ->
             button.setOnClickListener {
-                when (button)
-                {
-                    binding.clearButton -> binding.resultEditText.setText("0")
-                    binding.deleteButton ->
-                    {
+                when (button) {
+                    binding.clearButton -> {
+                        binding.resultEditText.setText("0")
+                        currentOperand = ""
+                        currentOperator = ""
+                        calculationDone = false
+                    }
+                    binding.deleteButton -> {
                         val currentText = binding.resultEditText.text.toString()
-                        if (currentText.isNotEmpty())
-                        {
+                        if (currentText.isNotEmpty()) {
                             val newText = currentText.dropLast(1)
-
-                            // If only "-" remains after deleting, reset to "0"
-                            if (newText == "-" || newText.isEmpty())
-                            {
-                                binding.resultEditText.setText("0")
-                            }
-                            else
-                            {
-                                binding.resultEditText.setText(newText)
-                            }
+                            binding.resultEditText.setText(if (newText.isEmpty() || newText == "-") "0" else newText)
                         }
                     }
-                    binding.plusMinusButton ->
-                    {
+                    binding.plusMinusButton -> {
                         val currentText = binding.resultEditText.text.toString()
-                        if (currentText.isNotEmpty())
-                        {
-                            // don't allow changing sign if the current text is "0" or empty
-                            if (currentText == "0" || currentText.isEmpty())
-                            {
-                                return@setOnClickListener // Do nothing
-                            }
-                            // if the current text is already negative, remove the negative sign
-                            if (currentText.startsWith("-"))
-                            {
-                                binding.resultEditText.setText(currentText.removePrefix("-"))
-                            }
-                            else
-                            {
-                                val prefixedCurrentText = "-$currentText"
-                                binding.resultEditText.setText(prefixedCurrentText)
-                            }
+                        if (currentText != "0") {
+                            binding.resultEditText.setText(
+                                if (currentText.startsWith("-"))
+                                    currentText.removePrefix("-")
+                                else
+                                    "-$currentText"
+                            )
                         }
                     }
                 }
@@ -133,11 +95,63 @@ class Calculator(private val binding: ActivityMainBinding) {
         }
     }
 
+    private fun configureOperatorButtons() {
+        operatorButtons.forEach { button ->
+            button.setOnClickListener {
+                val value = binding.resultEditText.text.toString()
+                when (button) {
+                    binding.plusButton, binding.minusButton,
+                    binding.multiplyButton, binding.divideButton -> {
+                        if (currentOperator.isEmpty()) {
+                            currentOperand = value
+                            currentOperator = button.text.toString()
+                            binding.resultEditText.setText("0")
+                        }
+                    }
+                    binding.percentButton -> {}
+                }
+            }
+        }
 
+        binding.equalsButton.setOnClickListener {
+            if (currentOperand.isNotEmpty() && currentOperator.isNotEmpty()) {
+                val secondOperand = binding.resultEditText.text.toString()
+                val result = performCalculation(currentOperand, secondOperand, currentOperator)
+                binding.resultEditText.setText(result)
+                currentOperand = ""
+                currentOperator = ""
+                calculationDone = true
+            }
+        }
+    }
 
+    private fun performCalculation(first: String, second: String, operator: String): String {
+        try {
+            val num1 = first.toFloat()
+            val num2 = second.toFloat()
+            var result = 0f
 
+            if (operator == "+") {
+                result = num1 + num2
+            } else if (operator == "-") {
+                result = num1 - num2
+            } else if (operator == "×" || operator == "*") {
+                result = num1 * num2
+            } else if (operator == "÷" || operator == "/") {
+                if (num2 != 0f) {
+                    result = num1 / num2
+                } else {
+                    return "Error"
+                }
+            } else {
+                return "Error"
+            }
 
-
+            return result.toString()
+        } catch (e: Exception) {
+            return "Error"
+        }
+    }
 
 
 }
