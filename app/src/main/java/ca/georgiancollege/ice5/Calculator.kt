@@ -135,9 +135,9 @@ class Calculator(private val binding: ActivityMainBinding) {
                 result = num1 + num2
             } else if (operator == "-") {
                 result = num1 - num2
-            } else if (operator == "×" || operator == "*") {
+            } else if (operator == "\uf00d" ) {
                 result = num1 * num2
-            } else if (operator == "÷" || operator == "/") {
+            } else if (operator == "\uf529" ) {
                 if (num2 != 0f) {
                     result = num1 / num2
                 } else {
